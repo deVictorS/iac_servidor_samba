@@ -1,0 +1,14 @@
+services :
+  samba-ad:
+    image: nowsci/samba-domain:latest
+    container_name: samba-server
+    restart: always
+    network_mode: host
+    volumes:
+    - /opt/samba-server/data:/var/lib/samba
+    - /opt/samba-server/config:/etc/samba
+    environment:
+      - DOMAIN=VIRTUS.LOCAL
+      - DOMAINPASS=Admin123
+      - DNSFORWARDER=8.8.8.8
+      - HOSTIP=10.0.0.3

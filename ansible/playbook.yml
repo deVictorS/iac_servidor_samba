@@ -1,0 +1,47 @@
+- name: Deloy Samba AD 
+  hosts: server
+  become: true
+  vars:
+    server_ip: "10.0.0.3"
+    domain_name: "virtus.local"
+  
+  tasks:
+    - name: Instalar dependências iniciais
+      apt:
+        name: [docker.io, docker-compose-v2, python3-docker]
+        state: present
+        update_cache: yes
+
+    - name: Parar systemd-resolved (libera porta 53)
+      systemd:
+        name: systemd-resolved
+        state: stopped
+        enabled: no
+
+    - name: Criar novo resolv.conf apontando para si mesmo
+      copy:
+        dest: /etc/resolv.conf
+        content: |
+          nameserver 127.0.0.1
+          nameserver 8.8.8.8
+          search {{ domain_name }}
+        mode: '0644'
+
+    - name: Criar pastas do AD
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /opt/samba-server/data
+        - /opt/samba-server/config
+
+    - name: Enviar Docker compose
+      copy:
+        src: ../docker/docker-compose.yml
+        dest: /opt/samba-server/docker-compose.yml
+
+    - name: Subir o container
+      community.docker.docker_compose_v2:
+        project_src: /opt/samba-server
+        state: present
